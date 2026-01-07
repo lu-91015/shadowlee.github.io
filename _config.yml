@@ -1,0 +1,31 @@
+title: "shadowLee - 语音按钮网站"
+description: "点击按钮播放语音"
+url: "https://lu-91015.github.io"
+baseurl: "/shadowlee.github.io"
+
+# 构建设置
+markdown: kramdown
+permalink: pretty
+theme: minima  # 如果使用 minima 主题
+
+minima:
+  skin: classic
+
+# 插件
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+
+# 排除文件
+exclude:
+  - .jekyll-cache
+  - _site
+  - vendor
+  - Gemfile
+  - Gemfile.lock
+  - README.md
+
+# 包含文件
+include:
+  - assets
+  - _layouts
