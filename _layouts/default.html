@@ -7,7 +7,7 @@
   {% if page.description %}
   <meta name="description" content="{{ page.description }}">
   {% endif %}
-  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="{{ '/assets/images/favicon.ico' | relative_url }}" type="image/x-icon">
   <title>{{ page.title | default: site.title }}</title>
 </head>
 
