@@ -57,13 +57,12 @@ description: 点击按钮播放语音
     <div class="now-playing" id="now-playing">暂无播放</div>
   </section>
 
-  <!-- 语音分类区域 -->
-  <!-- 嘎吱语音 -->
+  <!-- 豆沙妈妈 -->
   <section class="voice-category">
-    <h3>gachi语音</h3>
+    <h3>豆沙妈妈</h3>
     <div class="buttons-grid">
-      {% assign gachi_files = site.static_files | where_exp:"file", "file.path contains '/assets/audio/gachi/'" %}
-      {% for file in gachi_files %}
+      {% assign mama_files = site.static_files | where_exp:"file", "file.path contains '/assets/audio/mama/'" %}
+      {% for file in mama_files %}
         {% assign name = file.name | split: "." | first %}
         <button class="voice-btn" data-audio="{{ file.path | relative_url }}">
           {{ name }}
@@ -72,12 +71,12 @@ description: 点击按钮播放语音
     </div>
   </section>
 
-  <!-- 对线语音 -->
+  <!-- 豆沙宝宝 -->
   <section class="voice-category">
-    <h3>对线语音</h3>
+    <h3>豆沙宝宝</h3>
     <div class="buttons-grid">
-      {% assign duixian_files = site.static_files | where_exp:"file", "file.path contains '/assets/audio/duixian/'" %}
-      {% for file in duixian_files %}
+      {% assign baobao_files = site.static_files | where_exp:"file", "file.path contains '/assets/audio/baobao/'" %}
+      {% for file in baobao_files %}
         {% assign name = file.name | split: "." | first %}
         <button class="voice-btn" data-audio="{{ file.path | relative_url }}">
           {{ name }}
@@ -86,7 +85,35 @@ description: 点击按钮播放语音
     </div>
   </section>
 
-  <!-- 杂项语音 -->
+  <!-- 豆沙老公 -->
+  <section class="voice-category">
+    <h3>豆沙老公</h3>
+    <div class="buttons-grid">
+      {% assign laogong_files = site.static_files | where_exp:"file", "file.path contains '/assets/audio/laogong/'" %}
+      {% for file in laogong_files %}
+        {% assign name = file.name | split: "." | first %}
+        <button class="voice-btn" data-audio="{{ file.path | relative_url }}">
+          {{ name }}
+        </button>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- 豆沙姐姐 -->
+  <section class="voice-category">
+    <h3>豆沙姐姐</h3>
+    <div class="buttons-grid">
+      {% assign jiejie_files = site.static_files | where_exp:"file", "file.path contains '/assets/audio/jiejie/'" %}
+      {% for file in jiejie_files %}
+        {% assign name = file.name | split: "." | first %}
+        <button class="voice-btn" data-audio="{{ file.path | relative_url }}">
+          {{ name }}
+        </button>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- 杂项语音（保留不变） -->
   <section class="voice-category">
     <h3>杂项语音</h3>
     <div class="buttons-grid">
