@@ -385,7 +385,7 @@ description: 点击按钮播放语音 / 浏览表情
 <script src="{{ '/assets/js/game-modal.js' | relative_url }}?v=15" defer></script>
 <script src="{{ '/assets/js/game-slot.js' | relative_url }}?v=13" defer></script>
 <script src="{{ '/assets/js/game-breakout.js' | relative_url }}?v=13" defer></script>
-<script src="{{ '/assets/js/game-merge.js' | relative_url }}?v=13" defer></script>
+<script src="{{ '/assets/js/game-merge.js' | relative_url }}?v=15" defer></script>
 <script src="{{ '/assets/js/game-flappy.js' | relative_url }}?v=13" defer></script>
 <script type="module" src="{{ '/assets/js/game-jump.js' | relative_url }}?v=13"></script>
 <script src="{{ '/assets/js/game-number.js' | relative_url }}?v=16" defer></script>
