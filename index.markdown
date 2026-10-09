@@ -145,26 +145,54 @@ description: 点击按钮播放语音 / 浏览表情
   <!-- 游戏面板 -->
   <section id="games-panel" class="tab-panel">
     <div class="games-grid">
-      <div class="game-card" data-game="slot" tabindex="0" role="button" aria-label="打开熊猫老虎机">
-        <div class="game-card-icon">🎰</div>
-        <h3>熊猫老虎机</h3>
-        <p>拉动拉杆，三个相同表情赢大奖</p>
-      </div>
-      <div class="game-card" data-game="breakout" tabindex="0" role="button" aria-label="打开熊猫打砖块">
-        <div class="game-card-icon">🧱</div>
-        <h3>熊猫打砖块</h3>
-        <p>消除砖块，挑战关卡</p>
-      </div>
-      <div class="game-card" data-game="merge" tabindex="0" role="button" aria-label="打开合成熊猫">
-        <div class="game-card-icon">🐼</div>
-        <h3>合成熊猫</h3>
-        <p>相同表情合成更大的球</p>
-      </div>
-      <div class="game-card" data-game="flappy" tabindex="0" role="button" aria-label="打开李豆沙 Flappy">
-        <div class="game-card-icon">🪽</div>
-        <h3>李豆沙 Flappy</h3>
-        <p>扇动翅膀穿过管道</p>
-      </div>
+      <button type="button" class="game-card" data-game="slot" aria-label="打开熊猫老虎机">
+        <span class="game-card-icon" aria-hidden="true">🎰</span>
+        <span class="game-card-text">
+          <span class="game-card-name">熊猫老虎机</span>
+          <span class="game-card-desc">从 500 分转到 1000 分，三档难度</span>
+        </span>
+        <span class="game-card-best" data-best-for="slot"></span>
+      </button>
+      <button type="button" class="game-card" data-game="breakout" aria-label="打开熊猫打砖块">
+        <span class="game-card-icon" aria-hidden="true">🧱</span>
+        <span class="game-card-text">
+          <span class="game-card-name">熊猫打砖块</span>
+          <span class="game-card-desc">清空砖块进入下一关，越往后球越快</span>
+        </span>
+        <span class="game-card-best" data-best-for="breakout"></span>
+      </button>
+      <button type="button" class="game-card" data-game="merge" aria-label="打开合成熊猫">
+        <span class="game-card-icon" aria-hidden="true">🐼</span>
+        <span class="game-card-text">
+          <span class="game-card-name">合成熊猫</span>
+          <span class="game-card-desc">两个相同的表情球碰在一起，合成更大的一个</span>
+        </span>
+        <span class="game-card-best" data-best-for="merge"></span>
+      </button>
+      <button type="button" class="game-card" data-game="flappy" aria-label="打开李豆沙 Flappy">
+        <span class="game-card-icon" aria-hidden="true">🧹</span>
+        <span class="game-card-text">
+          <span class="game-card-name">李豆沙 Flappy</span>
+          <span class="game-card-desc">骑着扫帚穿过竹林，别撞上竹子</span>
+        </span>
+        <span class="game-card-best" data-best-for="flappy"></span>
+      </button>
+      <button type="button" class="game-card" data-game="jump" aria-label="打开熊猫跳一跳">
+        <span class="game-card-icon" aria-hidden="true">🐾</span>
+        <span class="game-card-text">
+          <span class="game-card-name">熊猫跳一跳</span>
+          <span class="game-card-desc">按住蓄力、松开起跳，落在台子正中心有连击</span>
+        </span>
+        <span class="game-card-best" data-best-for="jump"></span>
+      </button>
+      <button type="button" class="game-card" data-game="number" aria-label="打开熊猫大胃王">
+        <span class="game-card-icon" aria-hidden="true">🍽️</span>
+        <span class="game-card-text">
+          <span class="game-card-name">熊猫大胃王</span>
+          <span class="game-card-desc">吃掉数字比你小的熊猫，长到 22966160 就赢</span>
+        </span>
+        <span class="game-card-best" data-best-for="number"></span>
+      </button>
     </div>
   </section>
 
@@ -238,53 +266,114 @@ description: 点击按钮播放语音 / 浏览表情
   <!-- 游戏弹窗 -->
   <div id="game-modal" class="game-modal" style="display:none;" aria-hidden="true">
     <div class="game-modal-backdrop" data-close-modal></div>
-    <div class="game-modal-content">
-      <button class="game-modal-close" data-close-modal aria-label="关闭">&times;</button>
+    <div class="game-modal-content" role="dialog" aria-modal="true" aria-labelledby="game-modal-title">
+      <header class="game-head">
+        <h2 class="game-head-title" id="game-modal-title"></h2>
+        <button type="button" class="game-modal-close" data-close-modal aria-label="关闭游戏">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+        </button>
+      </header>
       <div class="game-modal-body" id="game-modal-body">
-        <div class="game-instance" id="game-slot" data-game="slot" style="display:none;">
-          <h2 class="game-title">熊猫老虎机</h2>
-          <div class="slot-machine">
-            <div class="slot-modes">
-              <button class="slot-mode active" data-mode="easy">简单（3图）</button>
-              <button class="slot-mode" data-mode="normal">普通（4图）</button>
-              <button class="slot-mode" data-mode="hard">困难（5图）</button>
-            </div>
+
+        <div class="game-instance" id="game-slot" data-game="slot" data-title="熊猫老虎机" style="display:none;">
+          <div class="game-hud">
+            <span class="hud-chip"><span class="hud-label">得分</span><span class="hud-num" id="slot-score">500</span></span>
+            <span class="hud-chip"><span class="hud-label">目标</span><span class="hud-num">1000</span></span>
+            <span class="hud-chip"><span class="hud-label">每转</span><span class="hud-num" id="slot-bet">25</span></span>
+          </div>
+          <div class="slot-modes" role="group" aria-label="难度">
+            <button type="button" class="slot-mode active" data-mode="easy">简单 · 3 轴</button>
+            <button type="button" class="slot-mode" data-mode="normal">普通 · 4 轴</button>
+            <button type="button" class="slot-mode" data-mode="hard">困难 · 5 轴</button>
+          </div>
+          <div class="slot-cabinet">
             <div class="slot-reels" id="slot-reels"></div>
-            <div class="slot-controls">
-              <div class="slot-info">得分：<span id="slot-score">0</span> / 1000</div>
-              <button id="slot-spin" class="control-btn big">旋转</button>
-              <button id="slot-reset" class="control-btn">重开</button>
-              <div id="slot-result" class="slot-result"></div>
+            <div class="slot-result" id="slot-result" aria-live="polite">点“旋转”开始</div>
+          </div>
+          <div class="slot-actions">
+            <button type="button" id="slot-spin" class="game-btn primary">旋转</button>
+            <button type="button" id="slot-reset" class="game-btn">重开</button>
+          </div>
+          <div class="slot-info">
+            <div class="slot-pool">
+              <span class="slot-info-label">本局图池</span>
+              <span class="slot-pool-list" id="slot-pool"></span>
             </div>
+            <table class="slot-paytable" id="slot-paytable" aria-label="赔率"></table>
           </div>
         </div>
 
-        <div class="game-instance" id="game-breakout" data-game="breakout" style="display:none;">
-          <h2 class="game-title">熊猫打砖块</h2>
-          <canvas id="breakout-canvas" width="420" height="620"></canvas>
-          <div class="breakout-controls">
-            <div class="breakout-score">得分：<span id="breakout-score">0</span></div>
+        <div class="game-instance" id="game-breakout" data-game="breakout" data-title="熊猫打砖块" style="display:none;">
+          <div class="game-hud">
+            <span class="hud-chip"><span class="hud-label">得分</span><span class="hud-num" id="breakout-score">0</span></span>
+            <span class="hud-chip"><span class="hud-label">关卡</span><span class="hud-num" id="breakout-level">1</span></span>
+            <span class="hud-chip"><span class="hud-label">生命</span><span class="hud-num hud-lives" id="breakout-lives">3</span></span>
+            <span class="hud-chip best"><span class="hud-label">最高</span><span class="hud-num" id="breakout-best">0</span></span>
           </div>
-          <p class="breakout-tip">点击画面或按空格开始 / 发球；移动鼠标/手指控制挡板。</p>
+          <div class="game-screen" style="--ratio: 420 / 620;">
+            <canvas id="breakout-canvas" width="420" height="620"></canvas>
+          </div>
+          <p class="game-tip">移动鼠标或手指控制竹子挡板，也可以用 ← →；🐼 熊猫砖 30 分</p>
         </div>
 
-        <div class="game-instance" id="game-merge" data-game="merge" style="display:none;">
-          <h2 class="game-title">合成熊猫</h2>
-          <canvas id="merge-canvas" width="400" height="600"></canvas>
-          <p class="merge-tip">移动鼠标选位置，点击掉落；相同表情球碰撞会合成更大的球。</p>
+        <div class="game-instance" id="game-merge" data-game="merge" data-title="合成熊猫" style="display:none;">
+          <div class="game-hud">
+            <span class="hud-chip"><span class="hud-label">得分</span><span class="hud-num" id="merge-score">0</span></span>
+            <span class="hud-chip best"><span class="hud-label">最高</span><span class="hud-num" id="merge-best">0</span></span>
+            <span class="hud-chip next"><span class="hud-label">下一个</span><img id="merge-next" alt="" width="26" height="26"></span>
+          </div>
+          <div class="game-screen" style="--ratio: 400 / 600;">
+            <canvas id="merge-canvas" width="400" height="600"></canvas>
+          </div>
+          <p class="game-tip">左右移动选位置，点击掉落；按 P 暂停</p>
         </div>
 
-        <div class="game-instance" id="game-flappy" data-game="flappy" style="display:none;">
-          <h2 class="game-title">李豆沙 Flappy</h2>
-          <canvas id="flappy-canvas" width="400" height="600"></canvas>
-          <p class="flappy-tip">点击或按空格键跳跃，避开管道。</p>
+        <div class="game-instance" id="game-flappy" data-game="flappy" data-title="李豆沙 Flappy" style="display:none;">
+          <div class="game-hud">
+            <span class="hud-chip best"><span class="hud-label">最高</span><span class="hud-num" id="flappy-best">0</span></span>
+          </div>
+          <div class="game-screen" style="--ratio: 400 / 600;">
+            <canvas id="flappy-canvas" width="400" height="600"></canvas>
+          </div>
+          <p class="game-tip">点击画面或按空格往上飞</p>
+        </div>
+
+        <div class="game-instance" id="game-jump" data-game="jump" data-title="熊猫跳一跳" style="display:none;">
+          <div class="game-hud">
+            <span class="hud-chip"><span class="hud-label">得分</span><span class="hud-num" id="jump-score">0</span></span>
+            <span class="hud-chip"><span class="hud-label">连击</span><span class="hud-num" id="jump-combo">0</span></span>
+            <span class="hud-chip best"><span class="hud-label">最高</span><span class="hud-num" id="jump-best">0</span></span>
+          </div>
+          <div class="jump-skins" id="jump-skins" role="group" aria-label="选择角色"></div>
+          <div class="game-screen jump-screen" style="--ratio: 400 / 600;">
+            <canvas id="jump-canvas" width="400" height="600"></canvas>
+            <div class="jump-pop-layer" id="jump-pop" aria-hidden="true"></div>
+            <div class="jump-charge" id="jump-charge" hidden><span></span></div>
+            <div class="jump-overlay" id="jump-overlay" hidden></div>
+          </div>
+          <p class="game-tip">按住画面或空格蓄力，松开起跳。角色模型来自 <a href="https://github.com/shaw-core/ShadowLee_It-s-MyGO-" target="_blank" rel="noopener">ShadowLee: It's MyGO!</a></p>
+        </div>
+
+        <div class="game-instance" id="game-number" data-game="number" data-title="熊猫大胃王" style="display:none;">
+          <div class="game-hud">
+            <span class="hud-chip"><span class="hud-label">我的数字</span><span class="hud-num" id="number-value">1</span></span>
+            <span class="hud-chip"><span class="hud-label">吃掉</span><span class="hud-num" id="number-eaten">0</span></span>
+            <span class="hud-chip best"><span class="hud-label">最高</span><span class="hud-num" id="number-best">0</span></span>
+          </div>
+          <div class="game-screen" style="--ratio: 400 / 600;">
+            <canvas id="number-canvas" width="400" height="600"></canvas>
+          </div>
+          <p class="game-tip">鼠标或手指指向哪里就往哪里走，也可以用方向键 / WASD</p>
         </div>
       </div>
     </div>
   </div>
 
 
-<link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}?v=5">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&display=swap">
+<link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}?v=13">
 <script>
   window.SITE_BASE = "{{ '/' | relative_url }}";
   // Cloudflare Worker 上传服务地址
@@ -292,9 +381,11 @@ description: 点击按钮播放语音 / 浏览表情
   // 表情元数据（构建时注入），用于分类管理与多分类渲染
   window.EMOTE_META = {{ site.data.emotes_meta | jsonify }};
 </script>
-<script src="{{ '/assets/js/player.js' | relative_url }}?v=5" defer></script>
-<script src="{{ '/assets/js/game-modal.js' | relative_url }}?v=5" defer></script>
-<script src="{{ '/assets/js/game-slot.js' | relative_url }}?v=5" defer></script>
-<script src="{{ '/assets/js/game-breakout.js' | relative_url }}?v=5" defer></script>
-<script src="{{ '/assets/js/game-merge.js' | relative_url }}?v=5" defer></script>
-<script src="{{ '/assets/js/game-flappy.js' | relative_url }}?v=5" defer></script>
+<script src="{{ '/assets/js/player.js' | relative_url }}?v=13" defer></script>
+<script src="{{ '/assets/js/game-modal.js' | relative_url }}?v=15" defer></script>
+<script src="{{ '/assets/js/game-slot.js' | relative_url }}?v=13" defer></script>
+<script src="{{ '/assets/js/game-breakout.js' | relative_url }}?v=13" defer></script>
+<script src="{{ '/assets/js/game-merge.js' | relative_url }}?v=13" defer></script>
+<script src="{{ '/assets/js/game-flappy.js' | relative_url }}?v=13" defer></script>
+<script type="module" src="{{ '/assets/js/game-jump.js' | relative_url }}?v=13"></script>
+<script src="{{ '/assets/js/game-number.js' | relative_url }}?v=16" defer></script>

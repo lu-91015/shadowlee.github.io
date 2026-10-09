@@ -248,6 +248,10 @@ document.addEventListener('DOMContentLoaded', () => {
             player.stopAll();
             voiceButtons.forEach(b => b.classList.remove('active'));
         } else if (e.key === ' ') {
+            // 输入框里打字、或正在玩游戏时，空格不触发随机语音
+            const t = e.target;
+            if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(t.tagName))) return;
+            if (window.__gameModal && window.__gameModal.current()) return;
             e.preventDefault();
             player.randomPlay(voiceButtons);
         }

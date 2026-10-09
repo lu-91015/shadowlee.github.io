@@ -19,6 +19,12 @@
         return;
       }
       this.ctx = this.canvas.getContext('2d');
+      const GM = window.__gameModal || {};
+      this.FONT = GM.FONT || 'sans-serif';
+      this.setNum = (el, v) => { if (!el) return; if (GM.setNum) GM.setNum(el, v); else el.textContent = v; };
+      this.scoreEl = document.getElementById('merge-score');
+      this.bestEl = document.getElementById('merge-best');
+      this.nextEl = document.getElementById('merge-next');
 
       this.emoteImages = [];
       this.imagesLoaded = false;
@@ -26,13 +32,15 @@
       const meta = window.EMOTE_META || { items: [] };
       const items = [];
       const all = meta.items.filter(i => i.file);
+      if (!all.length) all.push({ file: '', name: '' });
       for (let i = 0; i < 11; i++) {
         items.push(all[i % all.length]);
       }
       this.emoteTypes = items.map((item, idx) => ({
         name: item.name || `Lv.${idx + 1}`,
         radius: [20, 25, 32, 40, 50, 62, 76, 92, 110, 132, 158][idx],
-        color: ['#FF6B6B', '#FF8E72', '#F9C66B', '#A8D46B', '#6BD4A8', '#6BBCD4', '#6B8CD4', '#8C6BD4', '#D46BB8', '#D46B7A', '#5A6B7C'][idx],
+        // 每一级的描边色：从樱花粉渐变到主题蓝，再到深蓝（最大级）
+        color: ['#ffb3c7', '#ff8fb3', '#f59ad0', '#d6a4f0', '#b3a8ff', '#8fb0ff', '#6f9bff', '#4f86f7', '#2f6fed', '#2353c9', '#13204a'][idx],
         points: idx + 1,
         file: item.file
       }));
@@ -41,7 +49,12 @@
       this.nextFruit = null;
       this.nextFruitX = this.canvas.width / 2;
       this.score = 0;
-      this.highScore = parseInt(localStorage.getItem('panda_merge_high_score') || '0', 10);
+      try {
+        this.highScore = parseInt(localStorage.getItem('panda_merge_high_score') || '0', 10) || 0;
+      } catch (e) { this.highScore = 0; }
+      this.lastDropTime = 0;
+      this.DROP_COOLDOWN = 450;   // 两次掉落之间的最短间隔（毫秒）
+      this.OVER_FRAMES = 90;      // 球在危险线上方停留约 1.5 秒才判负
       this.gameOver = false;
       this.mergeEffects = [];
       this.lastFrameTime = 0;
@@ -60,8 +73,11 @@
       this.setupEventListeners();
       this.init();
 
+      this.STEP = 1000 / 60;      // 固定 60Hz 物理步长，高刷屏下速度不变
+      this.acc = 0;
       this.lastFrameTime = performance.now();
-      requestAnimationFrame(this.gameLoop.bind(this));
+      this.boundLoop = this.gameLoop.bind(this);
+      requestAnimationFrame(this.boundLoop);
       gameLogger.info('游戏初始化完成');
     }
 
@@ -101,7 +117,7 @@
     }
 
     setupEventListeners() {
-      this.canvas.addEventListener('mousemove', (e) => {
+      const aim = (e) => {
         if (this.gameOver || !this.nextFruit || this.isPaused) return;
         const rect = this.canvas.getBoundingClientRect();
         this.nextFruitX = (e.clientX - rect.left) * (this.canvas.width / rect.width);
@@ -110,7 +126,10 @@
           Math.min(this.containerWidth - this.nextFruit.radius, this.nextFruitX)
         );
         this.nextFruit.x = this.nextFruitX;
-      });
+      };
+      // pointer 事件同时覆盖鼠标和触屏：手指按下 / 拖动时也能瞄准
+      this.canvas.addEventListener('pointermove', aim);
+      this.canvas.addEventListener('pointerdown', aim);
 
       this.canvas.addEventListener('click', () => {
         if (this.gameOver) {
@@ -123,12 +142,14 @@
       });
 
       window.addEventListener('keydown', (e) => {
+        if (window.__gameModal && !window.__gameModal.wantsKeys('merge', e)) return;
         if (e.key === 'p' || e.key === 'P') {
           this.togglePause();
         }
       });
 
       window.addEventListener('blur', () => {
+        if (!this.isOpen()) return;
         if (!this.gameOver && !this.isPaused) {
           this.togglePause();
         }
@@ -142,11 +163,24 @@
       this.mergeEffects = [];
       this.isPaused = false;
       this.createNextFruit();
+      this.updateHud();
       gameLogger.info('游戏重新开始');
     }
 
+    updateHud() {
+      this.setNum(this.scoreEl, this.score);
+      this.setNum(this.bestEl, Math.max(this.highScore, this.score));
+    }
+
     createNextFruit() {
-      const fruitIndex = Math.floor(Math.random() * 3);
+      // 正在手上的是 nextFruit；HUD 里预告的是再下一个
+      if (this.queued === undefined) this.queued = Math.floor(Math.random() * 3);
+      const fruitIndex = this.queued;
+      this.queued = Math.floor(Math.random() * 3);
+      if (this.nextEl) {
+        const f = this.emoteTypes[this.queued].file;
+        if (f) this.nextEl.src = `${base}/assets/images/emotes/${f}`;
+      }
       this.nextFruit = {
         type: fruitIndex,
         x: this.nextFruitX,
@@ -158,8 +192,15 @@
       };
     }
 
+    isOpen() {
+      return !window.__gameModal || window.__gameModal.current() === 'merge';
+    }
+
     dropFruit() {
       if (this.gameOver || !this.nextFruit || this.isPaused) return;
+      const now = performance.now();
+      if (now - this.lastDropTime < this.DROP_COOLDOWN) return;
+      this.lastDropTime = now;
       this.fruits.push({
         type: this.nextFruit.type,
         x: this.nextFruit.x,
@@ -173,14 +214,9 @@
     }
 
     togglePause() {
+      if (this.gameOver) return;
       this.isPaused = !this.isPaused;
-      if (this.isPaused) {
-        gameLogger.info('游戏暂停');
-      } else {
-        gameLogger.info('游戏继续');
-        this.lastFrameTime = performance.now();
-        requestAnimationFrame(this.gameLoop.bind(this));
-      }
+      gameLogger.info(this.isPaused ? '游戏暂停' : '游戏继续');
     }
 
     update(deltaTime) {
@@ -263,6 +299,7 @@
               });
 
               this.score += this.emoteTypes[newType].points;
+              this.updateHud();
               fruitA.toRemove = true;
               fruitB.toRemove = true;
 
@@ -276,50 +313,86 @@
 
       this.fruits = this.fruits.filter(fruit => !fruit.toRemove);
 
+      // 球顶超过危险线并持续一段时间才判负（避免弹跳瞬间误判）
       const gameOverThreshold = this.dropZoneHeight;
+      this.danger = 0;
       for (const fruit of this.fruits) {
-        if (fruit.y - fruit.radius < gameOverThreshold && Math.abs(fruit.vy) < 0.2) {
-          if (!this.gameOver) {
-            this.gameOver = true;
-            if (this.score > this.highScore) {
-              this.highScore = this.score;
-              localStorage.setItem('panda_merge_high_score', this.highScore.toString());
-            }
-            gameLogger.warning('游戏结束');
+        if (fruit.y - fruit.radius < gameOverThreshold) {
+          fruit.overFrames = (fruit.overFrames || 0) + 1;
+        } else {
+          fruit.overFrames = 0;
+        }
+        this.danger = Math.max(this.danger, fruit.overFrames / this.OVER_FRAMES);
+        if (fruit.overFrames > this.OVER_FRAMES && !this.gameOver) {
+          this.gameOver = true;
+          if (this.score > this.highScore) {
+            this.highScore = this.score;
+            try { localStorage.setItem('panda_merge_high_score', this.highScore.toString()); } catch (e) {}
           }
+          gameLogger.warning('游戏结束');
           break;
         }
       }
     }
 
+    overlay(title, sub, hint) {
+      const ctx = this.ctx, W = this.canvas.width, H = this.canvas.height;
+      ctx.fillStyle = 'rgba(19, 32, 74, 0.6)';
+      ctx.fillRect(0, 0, W, H);
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#fff';
+      ctx.font = `600 34px ${this.FONT}`;
+      ctx.fillText(title, W / 2, H / 2 - 10);
+      if (sub) {
+        ctx.font = `500 18px ${this.FONT}`;
+        ctx.fillStyle = '#dbe6ff';
+        ctx.fillText(sub, W / 2, H / 2 + 24);
+      }
+      if (hint) {
+        ctx.font = `500 15px ${this.FONT}`;
+        ctx.fillStyle = '#aebfe6';
+        ctx.fillText(hint, W / 2, H / 2 + 54);
+      }
+    }
+
     draw() {
-      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      const ctx = this.ctx, W = this.canvas.width, H = this.canvas.height;
 
-      this.ctx.fillStyle = '#FFF8E1';
-      this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+      // 背景：冰蓝，越往下越深一点，像一个玻璃罐
+      const g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, '#f4f8ff');
+      g.addColorStop(1, '#dce8ff');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
 
-      this.ctx.beginPath();
-      this.ctx.moveTo(0, this.dropZoneHeight);
-      this.ctx.lineTo(this.canvas.width, this.dropZoneHeight);
-      this.ctx.strokeStyle = '#FF6B6B';
-      this.ctx.lineWidth = 2;
-      this.ctx.stroke();
-
-      this.ctx.fillStyle = '#FF6B6B';
-      this.ctx.font = '12px sans-serif';
-      this.ctx.textAlign = 'center';
-      this.ctx.fillText('危险区：表情球堆过这条线就游戏结束', this.canvas.width / 2, this.dropZoneHeight - 8);
+      // 危险线：平时是淡粉虚线；有球压线时变实、变红并闪烁
+      const danger = this.gameOver ? 0 : (this.danger || 0);
+      const pulse = danger > 0 ? 0.55 + 0.45 * Math.sin(performance.now() / 90) : 0;
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(0, this.dropZoneHeight);
+      ctx.lineTo(W, this.dropZoneHeight);
+      if (danger > 0) {
+        ctx.strokeStyle = `rgba(230, 60, 110, ${0.5 + 0.5 * pulse})`;
+        ctx.lineWidth = 3;
+      } else {
+        ctx.setLineDash([8, 6]);
+        ctx.strokeStyle = 'rgba(255, 111, 156, 0.55)';
+        ctx.lineWidth = 2;
+      }
+      ctx.stroke();
+      ctx.restore();
+      if (danger > 0) {
+        ctx.fillStyle = `rgba(230, 60, 110, ${0.08 + 0.12 * danger})`;
+        ctx.fillRect(0, 0, W, this.dropZoneHeight);
+      }
 
       for (const effect of this.mergeEffects) {
-        this.ctx.beginPath();
-        this.ctx.arc(effect.x, effect.y, effect.radius + 10, 0, Math.PI * 2);
-        this.ctx.fillStyle = `rgba(255, 255, 255, ${effect.alpha})`;
-        this.ctx.fill();
-        this.ctx.beginPath();
-        this.ctx.arc(effect.x, effect.y, effect.radius, 0, Math.PI * 2);
-        this.ctx.strokeStyle = `rgba(255, 255, 255, ${effect.alpha})`;
-        this.ctx.lineWidth = 4;
-        this.ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(effect.x, effect.y, effect.radius + (1 - effect.alpha) * 18, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(47, 111, 237, ${effect.alpha * 0.6})`;
+        ctx.lineWidth = 4;
+        ctx.stroke();
       }
 
       for (const fruit of this.fruits) {
@@ -327,51 +400,34 @@
       }
 
       if (this.nextFruit && !this.gameOver && !this.isPaused) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.setLineDash([4, 6]);
+        ctx.moveTo(this.nextFruit.x, this.nextFruit.y + this.nextFruit.radius + 4);
+        ctx.lineTo(this.nextFruit.x, H);
+        ctx.strokeStyle = 'rgba(47, 111, 237, 0.35)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.restore();
+        const ready = performance.now() - this.lastDropTime >= this.DROP_COOLDOWN;
+        ctx.globalAlpha = ready ? 1 : 0.45;
         this.drawFruit(this.nextFruit);
-        this.ctx.beginPath();
-        this.ctx.setLineDash([5, 5]);
-        this.ctx.moveTo(this.nextFruit.x, this.nextFruit.y + this.nextFruit.radius);
-        this.ctx.lineTo(this.nextFruit.x, this.containerHeight);
-        this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
-        this.ctx.stroke();
-        this.ctx.setLineDash([]);
+        ctx.globalAlpha = 1;
       }
 
-      this.ctx.fillStyle = '#333';
-      this.ctx.font = '18px sans-serif';
-      this.ctx.textAlign = 'left';
-      this.ctx.fillText(`得分: ${this.score}`, 10, 28);
-      this.ctx.textAlign = 'right';
-      this.ctx.fillText(`最高分: ${this.highScore}`, this.canvas.width - 10, 28);
-
       if (this.isPaused && !this.gameOver) {
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.fillStyle = '#FFF';
-        this.ctx.font = '36px sans-serif';
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText('暂停中', this.canvas.width / 2, this.canvas.height / 2 - 30);
-        this.ctx.font = '16px sans-serif';
-        this.ctx.fillText('点击画面继续', this.canvas.width / 2, this.canvas.height / 2 + 10);
+        this.overlay('暂停中', null, '点击画面继续');
       }
 
       if (this.gameOver) {
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.fillStyle = '#FFF';
-        this.ctx.font = '40px sans-serif';
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText('游戏结束', this.canvas.width / 2, this.canvas.height / 2 - 40);
-        this.ctx.font = '20px sans-serif';
-        this.ctx.fillText(`最终得分: ${this.score}`, this.canvas.width / 2, this.canvas.height / 2);
-        this.ctx.fillText('点击画面重新开始', this.canvas.width / 2, this.canvas.height / 2 + 36);
+        this.overlay('游戏结束', `得分 ${this.score}　最高 ${this.highScore}`, '点击画面重新开始');
       }
     }
 
     drawFruit(fruit) {
       this.ctx.beginPath();
-      this.ctx.arc(fruit.x + 3, fruit.y + 3, fruit.radius, 0, Math.PI * 2);
-      this.ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      this.ctx.arc(fruit.x, fruit.y + 3, fruit.radius, 0, Math.PI * 2);
+      this.ctx.fillStyle = 'rgba(19, 32, 74, 0.12)';
       this.ctx.fill();
 
       if (this.imagesLoaded) {
@@ -388,8 +444,13 @@
           this.ctx.restore();
 
           this.ctx.beginPath();
-          this.ctx.arc(fruit.x, fruit.y, fruit.radius, 0, Math.PI * 2);
-          this.ctx.strokeStyle = '#000';
+          this.ctx.arc(fruit.x, fruit.y, fruit.radius - 1, 0, Math.PI * 2);
+          this.ctx.strokeStyle = '#fff';
+          this.ctx.lineWidth = 3;
+          this.ctx.stroke();
+          this.ctx.beginPath();
+          this.ctx.arc(fruit.x, fruit.y, fruit.radius + 0.5, 0, Math.PI * 2);
+          this.ctx.strokeStyle = fruit.color;
           this.ctx.lineWidth = 2;
           this.ctx.stroke();
         } else {
@@ -405,7 +466,7 @@
       this.ctx.arc(fruit.x, fruit.y, fruit.radius, 0, Math.PI * 2);
       this.ctx.fillStyle = fruit.color;
       this.ctx.fill();
-      this.ctx.strokeStyle = '#000';
+      this.ctx.strokeStyle = '#fff';
       this.ctx.lineWidth = 2;
       this.ctx.stroke();
 
@@ -416,17 +477,18 @@
     }
 
     gameLoop(timestamp) {
-      if (this.isPaused) {
-        this.draw();
-        return;
-      }
-      const deltaTime = timestamp - this.lastFrameTime;
+      // 循环始终保持运行（只有一条），暂停 / 弹窗关闭时只是跳过物理更新
+      requestAnimationFrame(this.boundLoop);
+      const dt = Math.max(0, Math.min(100, timestamp - this.lastFrameTime));
       this.lastFrameTime = timestamp;
-      if (!this.gameOver) {
-        this.update(deltaTime);
+      if (!this.isOpen()) { this.acc = 0; return; }
+      if (!this.isPaused && !this.gameOver) {
+        this.acc += dt;
+        while (this.acc >= this.STEP) { this.update(this.STEP); this.acc -= this.STEP; }
+      } else {
+        this.acc = 0;
       }
       this.draw();
-      requestAnimationFrame(this.gameLoop.bind(this));
     }
   }
 
