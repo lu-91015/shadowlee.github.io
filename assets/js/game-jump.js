@@ -273,7 +273,7 @@ function createGame(THREE, chars) {
 
   // ---- 状态 ----
   let platforms = [], cur, next, phase = 'ready', score = 0, combo = 0, best = 0;
-  let chargeStart = 0, charge = 0, jump = null, fallT = 0, fallTilt = null;
+  let chargeStart = 0, charge = 0, jump = null, fallT = 0, fallTilt = null, wobble = 0;
   const char = { x: 0, z: 0, y: PH };
   const camTarget = new THREE.Vector3(), camPos = new THREE.Vector3();
   const ripples = [];
@@ -352,6 +352,7 @@ function createGame(THREE, chars) {
     next.drop = 0; next.group.position.y = 0;
     char.x = 0; char.z = 0; char.y = PH;
     flipper.rotation.set(0, 0, 0);
+    wobble = 0;
     if (rig) rig.body.scale.set(1, 1, 1);
     faceNext();
     pivot.rotation.y = CAM_YAW;
@@ -414,6 +415,7 @@ function createGame(THREE, chars) {
     if (phase === 'over') { reset(); return; }
     if (phase !== 'ready' && phase !== 'idle') return;
     if (phase === 'ready') overlay(null);
+    if (wobble) { wobble = 0; flipper.rotation.z = 0; }
     phase = 'charging';
     chargeStart = performance.now();
   }
@@ -445,8 +447,26 @@ function createGame(THREE, chars) {
     return Math.abs(x - p.x) <= p.h + pad && Math.abs(z - p.z) <= p.h + pad;
   }
 
+  // 宽容（参考《蔚蓝》的转角修正）：落点只差一点点就在台子上时，把熊猫推回台面、摇晃一下站稳，而不是直接摔下去
+  const EDGE_GRACE = 0.24;
+  function nudgeOnto(p) {
+    const m = 0.1;
+    if (p.round) {
+      const dx = char.x - p.x, dz = char.z - p.z, d = Math.hypot(dx, dz) || 1, r = p.h - m;
+      if (d > r) { char.x = p.x + dx / d * r; char.z = p.z + dz / d * r; }
+    } else {
+      char.x = Math.max(p.x - p.h + m, Math.min(p.x + p.h - m, char.x));
+      char.z = Math.max(p.z - p.h + m, Math.min(p.z + p.h - m, char.z));
+    }
+    wobble = 36;
+  }
+
   function land() {
-    const { x, z } = char;
+    let { x, z } = char;
+    let saved = false;
+    if (!onPlatform(next, x, z) && onPlatform(next, x, z, EDGE_GRACE)) { nudgeOnto(next); saved = true; }
+    else if (!onPlatform(next, x, z) && !onPlatform(cur, x, z) && onPlatform(cur, x, z, EDGE_GRACE)) { nudgeOnto(cur); saved = true; }
+    ({ x, z } = char);
     if (onPlatform(next, x, z)) {
       const d = Math.hypot(x - next.x, z - next.z);
       let gain;
@@ -458,7 +478,7 @@ function createGame(THREE, chars) {
       } else {
         combo = 0;
         gain = 1;
-        popup('+1', x, PH + 2, z, false);
+        popup(saved ? '好险！ +1' : '+1', x, PH + 2, z, false);
       }
       score += gain;
       next.squash = 0.2;
@@ -469,6 +489,7 @@ function createGame(THREE, chars) {
       phase = 'idle';
       updateHud();
     } else if (onPlatform(cur, x, z)) {
+      if (saved) popup('好险！', x, PH + 2, z, false);
       phase = 'idle';
       faceNext();
     } else {
@@ -542,6 +563,12 @@ function createGame(THREE, chars) {
     } else {
       char.y = PH * (1 - cur.squash);
       relaxBody();
+      // 擦边站稳后左右晃几下
+      if (wobble > 0) {
+        wobble--;
+        flipper.rotation.z = Math.sin(wobble * 0.55) * 0.3 * (wobble / 36);
+        if (wobble === 0) flipper.rotation.z = 0;
+      }
     }
     if (phase === 'charging' || phase === 'jumping') turnTowards(targetYaw, 0.35);
     else if (phase !== 'falling') turnTowards(CAM_YAW, 0.12);

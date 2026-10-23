@@ -189,9 +189,11 @@
       if (ball.y - ball.r <= 0) { ball.y = ball.r; ball.vy *= -1; }
 
       // 挡板
+      // 宽容：挡板左右各多算 6px，球稍微穿过挡板一点（6px 内）也算接住
+      const CATCH = 6;
       if (ball.vy > 0
-          && ball.y + ball.r >= PADDLE_Y - PADDLE_H / 2 && ball.y - ball.r <= PADDLE_Y + PADDLE_H / 2
-          && ball.x + ball.r >= paddle.x - paddle.w / 2 && ball.x - ball.r <= paddle.x + paddle.w / 2) {
+          && ball.y + ball.r >= PADDLE_Y - PADDLE_H / 2 && ball.y - ball.r <= PADDLE_Y + PADDLE_H / 2 + CATCH
+          && ball.x + ball.r >= paddle.x - paddle.w / 2 - CATCH && ball.x - ball.r <= paddle.x + paddle.w / 2 + CATCH) {
         const t = clamp((ball.x - (paddle.x - paddle.w / 2)) / paddle.w, 0, 1); // 0..1
         const angle = -Math.PI * 0.85 + t * Math.PI * 0.7; // 范围约 150°
         ball.vx = Math.cos(angle) * ball.speed;

@@ -59,7 +59,7 @@
     const GOAL = 22966160;        // 胜利数字
 
     let player, npcs, phase, best, eaten, effects, toasts, view, decos = [], keys = {}, pointer = null;
-    let winT = 0, confetti = [];
+    let winT = 0, confetti = [], spawnGrace = 0;
     try { best = parseInt(localStorage.getItem(BEST_KEY) || '0', 10) || 0; } catch (e) { best = 0; }
 
     const radiusOf = (n) => 13 + Math.log2(n + 1) * 5.5;
@@ -95,6 +95,7 @@
 
     function reset() {
       hw = hwTarget = hwAnnounced = HW_START;
+      spawnGrace = 60;
       player = { x: 0, y: 0, n: 3, r: radiusOf(3), vx: 0, vy: 0, face: 1 };
       view = { scale: 1, x: player.x, y: player.y };
       npcs = [];
@@ -328,15 +329,16 @@
         clampToWorld(npc);
       }
 
-      // 碰撞：中心距离小于较大一方半径的 85% 才算吃到（擦边不算）
+      // 碰撞（宽容）：吃别人放宽到较大一方半径的 100%；被吃收紧到 70%，擦边不算。开局 1 秒无敌
+      if (spawnGrace > 0) spawnGrace--;
       for (let i = npcs.length - 1; i >= 0; i--) {
         const npc = npcs[i];
         const d = Math.hypot(npc.x - player.x, npc.y - player.y);
-        if (d > Math.max(npc.r, player.r) * 0.85) continue;
-        if (npc.n < player.n) {
+        const R = Math.max(npc.r, player.r);
+        if (npc.n < player.n && d <= R * 1.0) {
           eat(npc);
           npcs.splice(i, 1);
-        } else if (npc.n > player.n) {
+        } else if (npc.n > player.n && d <= R * 0.7 && spawnGrace === 0) {
           phase = 'over';
           effects.push({ x: player.x, y: player.y, r: player.r, t: 0, text: '' });
           saveBest();

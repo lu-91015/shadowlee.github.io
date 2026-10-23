@@ -90,7 +90,9 @@
       if (!running || gameOver) return;
       frame++;
       const ease = Math.min(1, EASE_START + (1 - EASE_START) * (frame / EASE_FRAMES));
-      bird.vy = Math.min(MAX_FALL, bird.vy + GRAVITY * ease);
+      // 宽容：跳到最高点附近（速度接近 0）时重力减半，留出调整时间，弧线也更好看（参考《蔚蓝》）
+      const apex = Math.abs(bird.vy) < 1.2 ? 0.5 : 1;
+      bird.vy = Math.min(MAX_FALL, bird.vy + GRAVITY * ease * apex);
       bird.y += bird.vy;
       bird.rot = Math.max(-0.5, Math.min(1.2, bird.vy / 12));
 
@@ -109,7 +111,15 @@
         // 碰撞
         const hitTop = rectHit(BIRD_X, bird.y, HIT_R, p.x, 0, PIPE_W, p.gapTop);
         const hitBottom = rectHit(BIRD_X, bird.y, HIT_R, p.x, p.gapTop + p.gap, PIPE_W, H - GROUND_H - (p.gapTop + p.gap));
-        if (hitTop || hitBottom) die();
+        if (hitTop || hitBottom) {
+          // 宽容：只擦到竹子口边缘几像素时，把熊猫推回缺口里，而不是直接判死（类似《蔚蓝》的转角修正）
+          const gapBottom = p.gapTop + p.gap;
+          const pushDown = p.gapTop - (bird.y - HIT_R);      // 顶部擦进去多少
+          const pushUp = (bird.y + HIT_R) - gapBottom;        // 底部擦进去多少
+          if (hitTop && pushDown > 0 && pushDown <= 7) { bird.y += pushDown + 0.5; bird.vy = Math.max(bird.vy, 0); }
+          else if (hitBottom && pushUp > 0 && pushUp <= 7) { bird.y -= pushUp + 0.5; bird.vy = Math.min(bird.vy, 0); }
+          else die();
+        }
       }
       pipes = pipes.filter(p => p.x + PIPE_W > -10);
 
