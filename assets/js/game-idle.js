@@ -255,7 +255,9 @@ window.addEventListener('load', () => {
     for (const [v, u] of units) {
       if (n >= v) {
         const x = n / v;
-        return (x >= 100 ? x.toFixed(0) : x >= 10 ? x.toFixed(1) : x.toFixed(2)).replace(/\.?0+$/, '') + u;
+        // 只去掉小数部分末尾的 0（2.50万 → 2.5万）；整数部分的 0 不能动（以前 2000万 被显示成 2万）
+        const str = x >= 100 ? x.toFixed(0) : x >= 10 ? x.toFixed(1) : x.toFixed(2);
+        return (str.includes('.') ? str.replace(/\.?0+$/, '') : str) + u;
       }
     }
     return String(n);

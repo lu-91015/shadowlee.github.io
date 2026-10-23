@@ -451,4 +451,4 @@ description: 点击按钮播放语音 / 浏览表情
 <script type="module" src="{{ '/assets/js/game-jump.js' | relative_url }}?v=14"></script>
 <script src="{{ '/assets/js/game-number.js' | relative_url }}?v=17" defer></script>
 <script src="{{ '/assets/js/game-bamboo.js' | relative_url }}?v=2" defer></script>
-<script src="{{ '/assets/js/game-idle.js' | relative_url }}?v=2" defer></script>
+<script src="{{ '/assets/js/game-idle.js' | relative_url }}?v=3" defer></script>
